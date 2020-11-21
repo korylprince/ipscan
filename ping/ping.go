@@ -11,15 +11,18 @@ import (
 
 const ICMPEchoRequestIdentifier uint16 = 0x3039
 
+//Ping represents an ICMP echo request
 type Ping struct {
 	IP       net.IP
 	Sequence uint16
 	SentTime time.Time
+	//RecvTime will be non-nil if a echo response was received
 	RecvTime *time.Time
 	err      error
 	callback chan *Ping
 }
 
+//Service is a type-safe service to send pings concurrently
 type Service struct {
 	sequence chan uint16
 
@@ -118,6 +121,8 @@ func (s *Service) errorHandler() {
 	}
 }
 
+//NewService returns a new *Service with the given amount of workers, buffer size, ping timeout and an error handler.
+//If errHandler is nil, service errors will be silently dropped
 func NewService(workers, buffer int, timeout time.Duration, errHandler func(error)) (*Service, []*net.IPAddr, error) {
 	s := &Service{
 		sequence:   make(chan uint16),
@@ -154,6 +159,7 @@ func NewService(workers, buffer int, timeout time.Duration, errHandler func(erro
 	return s, ips, nil
 }
 
+//Ping sends one ICMP echo request to ip and returns a *Ping, or an error if one occurred
 func (s *Service) Ping(ip net.IP) (*Ping, error) {
 	callback := <-s.poolOut
 	s.requests <- &Ping{IP: ip, callback: callback}

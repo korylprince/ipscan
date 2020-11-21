@@ -12,6 +12,7 @@ type host struct {
 	callback chan *host
 }
 
+//Service is a type-safe service to resolve hosts concurrently
 type Service struct {
 	in chan *host
 
@@ -63,6 +64,7 @@ func (s *Service) resolver() {
 	}
 }
 
+//NewService returns a new *Service with the given amount of workers and buffer size
 func NewService(workers, buffer int) *Service {
 	s := &Service{
 		in:      make(chan *host),
@@ -82,6 +84,7 @@ func NewService(workers, buffer int) *Service {
 	return s
 }
 
+//LookupIP returns the net.IPs resolved from given hostname, or an error if one occurred
 func (s *Service) LookupIP(hostname string) ([]net.IP, error) {
 	callback := <-s.poolOut
 	s.in <- &host{Hostname: hostname, callback: callback}
@@ -90,6 +93,7 @@ func (s *Service) LookupIP(hostname string) ([]net.IP, error) {
 	return host.IPs, host.Error
 }
 
+//LookupAddr returns the reverse lookup hostname of the given IP or an error if one occurred
 func (s *Service) LookupAddr(addr net.IP) (string, error) {
 	callback := <-s.poolOut
 	s.in <- &host{IPs: []net.IP{addr}, callback: callback}
