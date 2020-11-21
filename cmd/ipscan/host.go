@@ -45,9 +45,7 @@ func (h *Host) LookupAddr(resolver *resolve.Service) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	if err != nil {
-		h.ResolveError = err
-	} else {
+	if err == nil {
 		h.Hostname = hostname
 	}
 

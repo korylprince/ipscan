@@ -26,10 +26,13 @@ func update(app *tview.Application, t *tview.Table, footer *tview.TextView, list
 
 				if host.resolving {
 					t.SetCell(y+1, 1, tview.NewTableCell("..."))
-				} else if dErr, ok := host.ResolveError.(*net.DNSError); ok && dErr.Err == "Name or service not known" {
-					t.SetCell(y+1, 1, tview.NewTableCell(""))
 				} else if host.ResolveError != nil {
-					t.SetCell(y+1, 1, tview.NewTableCell(host.ResolveError.Error()).SetBackgroundColor(tcell.ColorRed))
+					errStr := host.ResolveError.Error()
+					if dErr, ok := host.ResolveError.(*net.DNSError); ok {
+						errStr = dErr.Err
+					}
+					t.SetCell(y+1, 6, tview.NewTableCell(errStr))
+					t.SetCell(y+1, 1, tview.NewTableCell(host.Hostname))
 				} else {
 					t.SetCell(y+1, 1, tview.NewTableCell(host.Hostname))
 				}
@@ -48,13 +51,14 @@ func update(app *tview.Application, t *tview.Table, footer *tview.TextView, list
 					t.SetCell(y+1, 5, tview.NewTableCell(fmt.Sprintf("%.3fms", float64(host.Max.Microseconds())/1000)))
 				}
 
-				if host.PingError != nil {
+				if host.ResolveError != nil {
+				} else if host.PingError != nil {
 					t.SetCell(y+1, 6, tview.NewTableCell(host.PingError.Error()))
 				} else {
 					t.SetCell(y+1, 6, tview.NewTableCell(""))
 				}
 
-				if host.Last != nil && host.Last.RecvTime == nil {
+				if (host.Last != nil && host.Last.RecvTime == nil) || host.ResolveError != nil {
 					for i := range headers {
 						t.GetCell(y+1, i).SetBackgroundColor(tcell.ColorRed)
 					}
